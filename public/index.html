@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FP Viewer</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { background-color: #2b2d31; color: white; font-family: sans-serif; text-align: center; padding: 50px; }
+        .fp-display { font-size: 3rem; font-weight: bold; color: #fee75c; }
+        #status { color: #aaaaaa; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <h1>あなたの現在のFP</h1>
+    <p id="status">Discordからユーザー情報を取得中...</p>
+    <div class="fp-display" id="fp-text">-- FP</div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
