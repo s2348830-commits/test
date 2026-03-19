@@ -1,7 +1,7 @@
 // esm.sh を使って Discord SDK を直接インポート（ビルド不要で初心者向け）
 import { DiscordSDK } from "/sdk.js";
 // Client ID を設定（Developer Portalで確認可能）
-const discordSdk = new DiscordSDK('1457823497937096836');
+const discordSdk = new DiscordSDK('1456185139267768407');
 const socket = io(); // Socket.ioの接続
 
 let currentUserId = null;
@@ -13,7 +13,7 @@ async function setupActivity() {
 
         // 1. Discordから認証コードを取得
         const { code } = await discordSdk.commands.authorize({
-            client_id: '1457823497937096836',
+            client_id: '1456185139267768407',
             response_type: "code",
             state: "",
             prompt: "none",
