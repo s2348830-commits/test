@@ -1,5 +1,5 @@
 import { DiscordSDK } from "/sdk.js";
-const discordSdk = new DiscordSDK('1457823497937096836');
+const discordSdk = new DiscordSDK('1456185139267768407');
 const socket = io();
 let currentUserId = null;
 
@@ -12,7 +12,7 @@ async function setupActivity() {
 
         // 1. 認可コードの取得
         const auth = await discordSdk.commands.authorize({
-            client_id: '1457823497937096836',
+            client_id: '1456185139267768407',
             response_type: "code",
             state: "",
             prompt: "none",
@@ -51,10 +51,16 @@ async function setupActivity() {
         fetchFP();
 
     } catch (error) {
-        // エラーの詳細を無理やり文字列にして表示
-        const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
-        console.error("💥 SDK Setup Error Detailed:", error);
-        document.getElementById('status').innerText = `エラー発生: ${errorMsg}`;
+        console.error("💥詳細ログ:", error);
+        
+        // 画面上の「認証中...」の文字をエラー内容に書き換えてしまう
+        const errorDetail = error.message || JSON.stringify(error);
+        document.getElementById('status').innerText = `致命的エラー: ${errorDetail}`;
+        
+        // もしエラーオブジェクトの中に詳細があればそれも出す
+        if (error.error_description) {
+            document.getElementById('status').innerText += ` (${error.error_description})`;
+        }
     }
 }
 
