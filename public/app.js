@@ -1,64 +1,63 @@
-// esm.sh を使って Discord SDK を直接インポート（ビルド不要で初心者向け）
 import { DiscordSDK } from "/sdk.js";
-// Client ID を設定（Developer Portalで確認可能）
-const discordSdk = new DiscordSDK('1456185139267768407');
-const socket = io(); // Socket.ioの接続
-
+const discordSdk = new DiscordSDK('1457823497937096836');
+const socket = io();
 let currentUserId = null;
 
 async function setupActivity() {
     try {
-        console.log("🔴ステップ0: ready待機...");
+        console.log("--- Activity Setup Start ---");
         await discordSdk.ready();
-        console.log("🟢ステップ1: ready完了！");
+        
+        document.getElementById('status').innerText = '認証中...';
 
-        document.getElementById('status').innerText = '認証中 (1/3)...';
-
-        console.log("🔴ステップ2: authorizeリクエスト...");
-        const { code } = await discordSdk.commands.authorize({
-            client_id: '1456185139267768407', // ★ここはあなたのIDのままです
+        // 1. 認可コードの取得
+        const auth = await discordSdk.commands.authorize({
+            client_id: '1457823497937096836',
             response_type: "code",
             state: "",
             prompt: "none",
             scope: ["identify"]
         });
-        console.log("🟢ステップ2完了: code取得成功 ->", code);
 
-        document.getElementById('status').innerText = '認証中 (2/3)...';
+        if (!auth.code) {
+            throw new Error("Discordから認可コードを受け取れませんでした。");
+        }
+        console.log("Step 1: Authorization Code obtained.");
 
-        console.log("🔴ステップ3: tokenリクエスト...");
+        // 2. サーバー経由でトークン交換
         const response = await fetch("/api/token", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code })
+            body: JSON.stringify({ code: auth.code })
         });
+
         const data = await response.json();
-        console.log("🟢ステップ3完了: tokenデータ取得 ->", data);
-
-        // ★もしサーバー側でエラーが起きて鍵がもらえなかったら、ここで止める
-        if (!data.access_token) {
-            throw new Error(`サーバーから鍵がもらえませんでした！中身: ${JSON.stringify(data)}`);
+        
+        if (!response.ok || !data.access_token) {
+            console.error("Server Token Error Details:", data);
+            throw new Error(`サーバーでのトークン交換に失敗しました: ${data.error || 'Unknown Error'}`);
         }
+        console.log("Step 2: Access Token received from server.");
 
-        document.getElementById('status').innerText = '認証中 (3/3)...';
-
-        console.log("🔴ステップ4: authenticateリクエスト...");
-        const authResult = await discordSdk.commands.authenticate({ access_token: data.access_token });
-        console.log("🟢ステップ4完了: 認証成功！", authResult);
-
+        // 3. 最終認証
+        const authResult = await discordSdk.commands.authenticate({ 
+            access_token: data.access_token 
+        });
+        
+        console.log("Step 3: Authentication successful!");
         currentUserId = authResult.user.id;
         document.getElementById('status').innerText = `ユーザー名: ${authResult.user.username} (同期完了)`;
 
         fetchFP();
 
     } catch (error) {
-        console.error("💥エラー発生💥:", error);
-        if (error.message) console.error("詳細:", error.message);
-        document.getElementById('status').innerText = 'エラー：処理が途中で止まりました';
+        // エラーの詳細を無理やり文字列にして表示
+        const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+        console.error("💥 SDK Setup Error Detailed:", error);
+        document.getElementById('status').innerText = `エラー発生: ${errorMsg}`;
     }
 }
 
-// サーバーからFPを取得して画面を更新する関数
 async function fetchFP() {
     if (!currentUserId) return;
     const res = await fetch(`/api/fp/${currentUserId}`);
@@ -66,18 +65,10 @@ async function fetchFP() {
     document.getElementById('fp-text').innerText = `${data.fp} FP`;
 }
 
-// ★ リアルタイム更新の魔法：サーバーから 'fp_updated' イベントを受信
 socket.on('fp_updated', (data) => {
-    // もし更新されたデータが「自分」のものだったら、画面を書き換える
     if (data.userId === currentUserId) {
         document.getElementById('fp-text').innerText = `${data.fp} FP`;
-        
-        // 少しアニメーション効果（色を変えて戻すなど）を入れるとリアルタイム感が増します
-        const el = document.getElementById('fp-text');
-        el.style.color = '#57F287';
-        setTimeout(() => el.style.color = '#fee75c', 1000);
     }
 });
 
-// 起動！
 setupActivity();
