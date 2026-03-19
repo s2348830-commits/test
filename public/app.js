@@ -8,38 +8,53 @@ let currentUserId = null;
 
 async function setupActivity() {
     try {
+        console.log("🔴ステップ0: ready待機...");
         await discordSdk.ready();
-        document.getElementById('status').innerText = '認証中...';
+        console.log("🟢ステップ1: ready完了！");
 
-        // 1. Discordから認証コードを取得
+        document.getElementById('status').innerText = '認証中 (1/3)...';
+
+        console.log("🔴ステップ2: authorizeリクエスト...");
         const { code } = await discordSdk.commands.authorize({
-            client_id: '1456185139267768407',
+            client_id: '1456185139267768407', // ★ここはあなたのIDのままです
             response_type: "code",
             state: "",
             prompt: "none",
             scope: ["identify"]
         });
+        console.log("🟢ステップ2完了: code取得成功 ->", code);
 
-        // 2. 自作APIサーバー経由でアクセストークンを取得
+        document.getElementById('status').innerText = '認証中 (2/3)...';
+
+        console.log("🔴ステップ3: tokenリクエスト...");
         const response = await fetch("/api/token", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ code })
         });
-        const { access_token } = await response.json();
+        const data = await response.json();
+        console.log("🟢ステップ3完了: tokenデータ取得 ->", data);
 
-        // 3. Discord SDKを認証し、自分のユーザーIDを特定
-        const authResult = await discordSdk.commands.authenticate({ access_token });
+        // ★もしサーバー側でエラーが起きて鍵がもらえなかったら、ここで止める
+        if (!data.access_token) {
+            throw new Error(`サーバーから鍵がもらえませんでした！中身: ${JSON.stringify(data)}`);
+        }
+
+        document.getElementById('status').innerText = '認証中 (3/3)...';
+
+        console.log("🔴ステップ4: authenticateリクエスト...");
+        const authResult = await discordSdk.commands.authenticate({ access_token: data.access_token });
+        console.log("🟢ステップ4完了: 認証成功！", authResult);
+
         currentUserId = authResult.user.id;
-        
         document.getElementById('status').innerText = `ユーザー名: ${authResult.user.username} (同期完了)`;
 
-        // 4. 初回のFP取得
         fetchFP();
 
     } catch (error) {
-        console.error("SDK Setup Error:", error);
-        document.getElementById('status').innerText = 'エラー：Discord内で起動してください';
+        console.error("💥エラー発生💥:", error);
+        if (error.message) console.error("詳細:", error.message);
+        document.getElementById('status').innerText = 'エラー：処理が途中で止まりました';
     }
 }
 
