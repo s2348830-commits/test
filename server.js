@@ -36,6 +36,18 @@ app.get('/sdk.js', async (req, res) => {
     }
 });
 
+app.get('/@discord/*', async (req, res) => {
+    try {
+        // パス回しされた本体のファイルも、サーバーが代わりに取得してあげる
+        const response = await axios.get(`https://esm.sh${req.originalUrl}`);
+        res.setHeader('Content-Type', 'application/javascript');
+        res.send(response.data);
+    } catch (error) {
+        console.error('内部SDK取得エラー:', error);
+        res.status(404).send('Not Found');
+    }
+});
+
 // ==========================================
 // REST API エンドポイント
 // ==========================================
