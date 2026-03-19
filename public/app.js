@@ -1,6 +1,5 @@
 // esm.sh を使って Discord SDK を直接インポート（ビルド不要で初心者向け）
-import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
-
+import { DiscordSDK } from "/sdk.js";
 // Client ID を設定（Developer Portalで確認可能）
 const discordSdk = new DiscordSDK('1457823497937096836');
 const socket = io(); // Socket.ioの接続
